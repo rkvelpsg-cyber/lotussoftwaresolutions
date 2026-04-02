@@ -1,0 +1,30 @@
+# Netlify configuration file
+[build]
+  # Directory to change to before starting a build
+  base = "/"
+  
+  # Build command
+  command = "npm run build"
+  
+  # Directory that contains the built files (output from vite build)
+  publish = "dist"
+
+# Environment variables (optional)
+[build.environment]
+  NODE_VERSION = "18"
+
+# SPA redirect rule - ensures all routes go to index.html
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/sitemap.xml"
+  status = 200
+
+[[redirects]]
+  from = "/google5182160c60c30ce4.html"
+  to = "/google5182160c60c30ce4.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
