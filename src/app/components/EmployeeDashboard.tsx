@@ -124,6 +124,67 @@ export function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
     [allEmployees],
   );
 
+  const employeeNameByUsername = useMemo(() => {
+    return employeeUsers.reduce<Record<string, string>>((map, employee) => {
+      map[employee.username] = employee.name || employee.username;
+      return map;
+    }, {});
+  }, [employeeUsers]);
+
+  const adminTimesheetSummary = useMemo(() => {
+    if (!isAdmin) {
+      return [];
+    }
+
+    const summaryMap = employeeUsers.reduce<
+      Record<
+        string,
+        {
+          username: string;
+          name: string;
+          entries: number;
+          totalHours: number;
+          completed: number;
+        }
+      >
+    >((map, employee) => {
+      map[employee.username] = {
+        username: employee.username,
+        name: employee.name || employee.username,
+        entries: 0,
+        totalHours: 0,
+        completed: 0,
+      };
+      return map;
+    }, {});
+
+    timesheetRows.forEach((row) => {
+      if (!summaryMap[row.employeeUsername]) {
+        summaryMap[row.employeeUsername] = {
+          username: row.employeeUsername,
+          name:
+            employeeNameByUsername[row.employeeUsername] ||
+            row.employeeUsername,
+          entries: 0,
+          totalHours: 0,
+          completed: 0,
+        };
+      }
+
+      summaryMap[row.employeeUsername].entries += 1;
+      summaryMap[row.employeeUsername].totalHours +=
+        Number(row.hoursSpent) || 0;
+
+      if (row.status === "Completed") {
+        summaryMap[row.employeeUsername].completed += 1;
+      }
+    });
+
+    return Object.values(summaryMap).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [employeeNameByUsername, employeeUsers, isAdmin, timesheetRows]);
+
   useEffect(() => {
     const storedData = localStorage.getItem("employeeData");
     if (storedData) {
@@ -1087,11 +1148,44 @@ export function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
               </p>
             )}
 
+            {isAdmin && adminTimesheetSummary.length > 0 && (
+              <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                {adminTimesheetSummary.map((item) => (
+                  <div
+                    key={item.username}
+                    className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3"
+                  >
+                    <p className="text-sm font-semibold text-gray-800">
+                      {item.name}
+                    </p>
+                    <p className="text-xs text-gray-500">{item.username}</p>
+                    <p className="mt-2 text-sm text-gray-700">
+                      Entries:{" "}
+                      <span className="font-semibold">{item.entries}</span>
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      Total Hours:{" "}
+                      <span className="font-semibold">
+                        {item.totalHours.toFixed(2)}
+                      </span>
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      Completed:{" "}
+                      <span className="font-semibold">{item.completed}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {isTimesheetLoading ? (
-              <p className="text-sm text-gray-600">Loading timesheet entries...</p>
+              <p className="text-sm text-gray-600">
+                Loading timesheet entries...
+              </p>
             ) : timesheetRows.length === 0 ? (
               <p className="text-sm text-gray-600">
-                No timesheet rows for this date. Click Add Timesheet Row to create one.
+                No timesheet rows for this date. Click Add Timesheet Row to
+                create one.
               </p>
             ) : (
               <div className="overflow-x-auto">
