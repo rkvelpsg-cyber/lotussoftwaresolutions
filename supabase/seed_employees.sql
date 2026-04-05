@@ -178,4 +178,57 @@ for delete
 to anon
 using (true);
 
+create table if not exists public.employee_timesheets (
+  id uuid primary key default gen_random_uuid(),
+  work_date date not null,
+  employee_username text not null,
+  task_title text not null,
+  hours_spent numeric(5,2) not null default 0,
+  status text not null default 'Not Started' check (status in ('Not Started', 'In Progress', 'Completed')),
+  notes text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint employee_timesheets_employee_username_fkey
+    foreign key (employee_username)
+    references public.employees(username)
+    on update cascade
+    on delete restrict
+);
+
+create index if not exists employee_timesheets_employee_date_idx
+  on public.employee_timesheets (employee_username, work_date);
+
+alter table public.employee_timesheets enable row level security;
+
+grant select, insert, update, delete on table public.employee_timesheets to anon;
+
+drop policy if exists employee_timesheets_read on public.employee_timesheets;
+create policy employee_timesheets_read
+on public.employee_timesheets
+for select
+to anon
+using (true);
+
+drop policy if exists employee_timesheets_insert on public.employee_timesheets;
+create policy employee_timesheets_insert
+on public.employee_timesheets
+for insert
+to anon
+with check (true);
+
+drop policy if exists employee_timesheets_update on public.employee_timesheets;
+create policy employee_timesheets_update
+on public.employee_timesheets
+for update
+to anon
+using (true)
+with check (true);
+
+drop policy if exists employee_timesheets_delete on public.employee_timesheets;
+create policy employee_timesheets_delete
+on public.employee_timesheets
+for delete
+to anon
+using (true);
+
 notify pgrst, 'reload schema';

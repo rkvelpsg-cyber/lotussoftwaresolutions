@@ -16,9 +16,13 @@ import {
 import {
   AssignedWork,
   DailyWorkEntry,
+  EmployeeTimesheetEntry,
+  deleteEmployeeTimesheetEntry,
   deleteDailyWorkEntry,
   getAllEmployees,
   getDailyWorkEntries,
+  getEmployeeTimesheetEntries,
+  saveEmployeeTimesheetEntry,
   saveDailyWorkEntry,
   setDailyEntriesLock,
 } from "../lib/employeeAuth";
@@ -39,6 +43,10 @@ interface EmployeeData {
 }
 
 interface DailyWorkRow extends DailyWorkEntry {
+  localId: string;
+}
+
+interface TimesheetRow extends EmployeeTimesheetEntry {
   localId: string;
 }
 
@@ -80,6 +88,9 @@ const CALL_STATUS_OPTIONS = [
 const YES_NO_OPTIONS: Array<"Yes" | "No"> = ["Yes", "No"];
 const DEMO_STATUS_OPTIONS = ["Pending", "Scheduled", "Completed", "Cancelled"];
 const ORDER_STATUS_OPTIONS = ["Pending", "In Negotiation", "Confirmed", "Lost"];
+const TIMESHEET_STATUS_OPTIONS: Array<
+  "Not Started" | "In Progress" | "Completed"
+> = ["Not Started", "In Progress", "Completed"];
 
 const getTodayIsoDate = () => new Date().toISOString().slice(0, 10);
 
@@ -100,6 +111,9 @@ export function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
   const [dailyRows, setDailyRows] = useState<DailyWorkRow[]>([]);
   const [isDailyLoading, setIsDailyLoading] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [timesheetRows, setTimesheetRows] = useState<TimesheetRow[]>([]);
+  const [isTimesheetLoading, setIsTimesheetLoading] = useState(false);
+  const [timesheetMessage, setTimesheetMessage] = useState("");
 
   const isAdmin = employeeData?.role === "admin";
   const currentUserWorks = employeeData?.assignedWorks ?? [];
@@ -158,10 +172,151 @@ export function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
     setIsDailyLoading(false);
   };
 
+  const loadTimesheetRows = async () => {
+    if (!employeeData?.username) {
+      return;
+    }
+
+    setIsTimesheetLoading(true);
+    setTimesheetMessage("");
+
+    const entries = await getEmployeeTimesheetEntries(
+      selectedDate,
+      isAdmin ? undefined : employeeData.username,
+    );
+
+    setTimesheetRows(
+      entries.map((entry) => ({
+        ...entry,
+        localId: entry.id || `ts-${Math.random().toString(36).slice(2, 6)}`,
+      })),
+    );
+
+    setIsTimesheetLoading(false);
+  };
+
   useEffect(() => {
     loadDailyRows();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeeData?.username, isAdmin, selectedDate]);
+
+  useEffect(() => {
+    loadTimesheetRows();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeData?.username, isAdmin, selectedDate]);
+
+  const createEmptyTimesheetRow = (): TimesheetRow => ({
+    id: "",
+    localId: `new-timesheet-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    workDate: selectedDate,
+    employeeUsername: employeeData?.username ?? "",
+    taskTitle: "",
+    hoursSpent: 0,
+    status: "Not Started",
+    notes: "",
+    createdAt: "",
+    updatedAt: "",
+  });
+
+  const addTimesheetRow = () => {
+    if (!employeeData?.username) {
+      return;
+    }
+
+    setTimesheetRows((previous) => [createEmptyTimesheetRow(), ...previous]);
+    setTimesheetMessage("");
+  };
+
+  const updateTimesheetRowValue = (
+    localId: string,
+    field: keyof TimesheetRow,
+    value: string,
+  ) => {
+    setTimesheetRows((previous) =>
+      previous.map((row) => {
+        if (row.localId !== localId) {
+          return row;
+        }
+
+        if (field === "hoursSpent") {
+          const parsed = Number(value);
+          return { ...row, hoursSpent: Number.isFinite(parsed) ? parsed : 0 };
+        }
+
+        return { ...row, [field]: value };
+      }),
+    );
+  };
+
+  const saveTimesheetRow = async (row: TimesheetRow) => {
+    if (!employeeData?.username) {
+      return;
+    }
+
+    if (!row.taskTitle.trim()) {
+      setTimesheetMessage("Please enter task title before saving.");
+      return;
+    }
+
+    if (row.hoursSpent < 0) {
+      setTimesheetMessage("Hours spent cannot be negative.");
+      return;
+    }
+
+    const payload: EmployeeTimesheetEntry = {
+      id: row.id,
+      workDate: selectedDate,
+      employeeUsername: isAdmin
+        ? row.employeeUsername || employeeData.username
+        : employeeData.username,
+      taskTitle: row.taskTitle,
+      hoursSpent: row.hoursSpent,
+      status: row.status,
+      notes: row.notes,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+
+    const result = await saveEmployeeTimesheetEntry(payload);
+
+    if (!result.entry) {
+      setTimesheetMessage(
+        `Timesheet save failed: ${result.error ?? "Unknown error."}`,
+      );
+      return;
+    }
+
+    setTimesheetRows((previous) =>
+      previous.map((current) =>
+        current.localId === row.localId
+          ? { ...result.entry, localId: result.entry.id }
+          : current,
+      ),
+    );
+    setTimesheetMessage("Timesheet saved.");
+  };
+
+  const deleteTimesheetRow = async (row: TimesheetRow) => {
+    if (!row.id) {
+      setTimesheetRows((previous) =>
+        previous.filter((item) => item.localId !== row.localId),
+      );
+      setTimesheetMessage("Unsaved timesheet row removed.");
+      return;
+    }
+
+    const deleted = await deleteEmployeeTimesheetEntry(row.id);
+
+    if (!deleted) {
+      setTimesheetMessage("Failed to delete timesheet row.");
+      return;
+    }
+
+    setTimesheetRows((previous) =>
+      previous.filter((item) => item.localId !== row.localId),
+    );
+    setTimesheetMessage("Timesheet row deleted.");
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("employeeData");
@@ -898,111 +1053,188 @@ export function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-lg shadow-lg p-8"
           >
-            <h2
-              className="text-2xl font-bold mb-6 text-gray-800"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
-            >
-              {isAdmin ? "Team Work Tracker" : "Weekly Timesheet"}
-            </h2>
-            {isAdmin ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b-2 border-gray-300">
-                      <th className="px-4 py-3 font-semibold text-gray-700">
-                        Employee
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-gray-700">
-                        Department
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-gray-700">
-                        Completed
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-gray-700">
-                        In Progress
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-gray-700">
-                        Not Started
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allEmployees.map((member, index) => {
-                      const stats = buildWorkStats(member.assignedWorks ?? []);
-                      return (
-                        <motion.tr
-                          key={member.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: index * 0.06 }}
-                          className="border-b border-gray-200 hover:bg-gray-50"
-                        >
-                          <td className="px-4 py-3 text-gray-700">
-                            {member.name}
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">
-                            {member.department}
-                          </td>
-                          <td className="px-4 py-3 text-green-700 font-semibold">
-                            {stats.completed}
-                          </td>
-                          <td className="px-4 py-3 text-yellow-700 font-semibold">
-                            {stats.inProgress}
-                          </td>
-                          <td className="px-4 py-3 text-gray-700 font-semibold">
-                            {stats.notStarted}
-                          </td>
-                        </motion.tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2
+                className="text-2xl font-bold text-gray-800"
+                style={{ fontFamily: "'Poppins', sans-serif" }}
+              >
+                {isAdmin ? "Team Timesheet" : "My Timesheet"}
+              </h2>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-gray-700">
+                  Date: {getDateLabel(selectedDate)}
+                </span>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                />
+                <button
+                  type="button"
+                  onClick={addTimesheetRow}
+                  className="inline-flex items-center gap-2 rounded bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+                >
+                  <Plus size={16} /> Add Timesheet Row
+                </button>
               </div>
+            </div>
+
+            {timesheetMessage && (
+              <p className="mb-4 rounded border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm text-cyan-800">
+                {timesheetMessage}
+              </p>
+            )}
+
+            {isTimesheetLoading ? (
+              <p className="text-sm text-gray-600">Loading timesheet entries...</p>
+            ) : timesheetRows.length === 0 ? (
+              <p className="text-sm text-gray-600">
+                No timesheet rows for this date. Click Add Timesheet Row to create one.
+              </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full min-w-[1100px] text-left border-collapse">
                   <thead>
                     <tr className="border-b-2 border-gray-300">
-                      <th className="px-4 py-3 font-semibold text-gray-700">
-                        Task
+                      {isAdmin && (
+                        <th className="px-3 py-2 text-sm font-semibold text-gray-700">
+                          Employee
+                        </th>
+                      )}
+                      <th className="px-3 py-2 text-sm font-semibold text-gray-700">
+                        Task Title
                       </th>
-                      <th className="px-4 py-3 font-semibold text-gray-700">
-                        Due Date
+                      <th className="px-3 py-2 text-sm font-semibold text-gray-700">
+                        Hours Spent
                       </th>
-                      <th className="px-4 py-3 font-semibold text-gray-700">
-                        Priority
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-gray-700">
+                      <th className="px-3 py-2 text-sm font-semibold text-gray-700">
                         Status
+                      </th>
+                      <th className="px-3 py-2 text-sm font-semibold text-gray-700">
+                        Notes
+                      </th>
+                      <th className="px-3 py-2 text-sm font-semibold text-gray-700">
+                        Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentUserWorks.map((work, index) => (
-                      <motion.tr
-                        key={work.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="border-b border-gray-200 hover:bg-gray-50"
+                    {timesheetRows.map((row) => (
+                      <tr
+                        key={row.localId}
+                        className="border-b border-gray-200 align-top"
                       >
-                        <td className="px-4 py-3 text-gray-700">
-                          {work.title}
+                        {isAdmin && (
+                          <td className="px-3 py-2">
+                            <select
+                              value={row.employeeUsername}
+                              onChange={(event) =>
+                                updateTimesheetRowValue(
+                                  row.localId,
+                                  "employeeUsername",
+                                  event.target.value,
+                                )
+                              }
+                              className="w-full min-w-[160px] rounded border border-gray-300 px-2 py-1 text-sm text-gray-700"
+                            >
+                              <option value="">Select employee</option>
+                              {employeeUsers.map((employee) => (
+                                <option
+                                  key={employee.username}
+                                  value={employee.username}
+                                >
+                                  {employee.name} ({employee.username})
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        )}
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={row.taskTitle}
+                            onChange={(event) =>
+                              updateTimesheetRowValue(
+                                row.localId,
+                                "taskTitle",
+                                event.target.value,
+                              )
+                            }
+                            className="w-full min-w-[220px] rounded border border-gray-300 px-2 py-1 text-sm text-gray-700"
+                            placeholder="Task summary"
+                          />
                         </td>
-                        <td className="px-4 py-3 font-semibold text-gray-800">
-                          {work.dueDate}
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.25"
+                            value={row.hoursSpent}
+                            onChange={(event) =>
+                              updateTimesheetRowValue(
+                                row.localId,
+                                "hoursSpent",
+                                event.target.value,
+                              )
+                            }
+                            className="w-full min-w-[120px] rounded border border-gray-300 px-2 py-1 text-sm text-gray-700"
+                          />
                         </td>
-                        <td className="px-4 py-3 text-gray-700">
-                          {work.priority}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(work.status)}`}
+                        <td className="px-3 py-2">
+                          <select
+                            value={row.status}
+                            onChange={(event) =>
+                              updateTimesheetRowValue(
+                                row.localId,
+                                "status",
+                                event.target.value,
+                              )
+                            }
+                            className="w-full min-w-[150px] rounded border border-gray-300 px-2 py-1 text-sm text-gray-700"
                           >
-                            {work.status}
-                          </span>
+                            {TIMESHEET_STATUS_OPTIONS.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
                         </td>
-                      </motion.tr>
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={row.notes}
+                            onChange={(event) =>
+                              updateTimesheetRowValue(
+                                row.localId,
+                                "notes",
+                                event.target.value,
+                              )
+                            }
+                            className="w-full min-w-[220px] rounded border border-gray-300 px-2 py-1 text-sm text-gray-700"
+                            placeholder="Optional notes"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => saveTimesheetRow(row)}
+                              className="rounded bg-cyan-600 px-3 py-1 text-xs font-semibold text-white hover:bg-cyan-700"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteTimesheetRow(row)}
+                              className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700"
+                            >
+                              <Trash2 size={12} /> Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>

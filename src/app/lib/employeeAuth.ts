@@ -50,6 +50,23 @@ export interface DailyWorkSaveResult {
   error: string | null;
 }
 
+export interface EmployeeTimesheetEntry {
+  id: string;
+  workDate: string;
+  employeeUsername: string;
+  taskTitle: string;
+  hoursSpent: number;
+  status: "Not Started" | "In Progress" | "Completed";
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmployeeTimesheetSaveResult {
+  entry: EmployeeTimesheetEntry | null;
+  error: string | null;
+}
+
 interface EmployeeDbRow {
   id: string;
   username: string;
@@ -82,6 +99,18 @@ interface DailyWorkDbRow {
   is_locked: boolean | null;
   locked_by: string | null;
   locked_at: string | null;
+}
+
+interface EmployeeTimesheetDbRow {
+  id: string;
+  work_date: string;
+  employee_username: string;
+  task_title: string;
+  hours_spent: number;
+  status: "Not Started" | "In Progress" | "Completed";
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 const mapDbUserToEmployeeUser = (row: EmployeeDbRow): EmployeeUser => {
@@ -119,6 +148,22 @@ const mapDbDailyWorkToEntry = (row: DailyWorkDbRow): DailyWorkEntry => {
     isLocked: Boolean(row.is_locked),
     lockedBy: row.locked_by,
     lockedAt: row.locked_at,
+  };
+};
+
+const mapDbTimesheetToEntry = (
+  row: EmployeeTimesheetDbRow,
+): EmployeeTimesheetEntry => {
+  return {
+    id: row.id,
+    workDate: row.work_date,
+    employeeUsername: row.employee_username,
+    taskTitle: row.task_title,
+    hoursSpent: row.hours_spent,
+    status: row.status,
+    notes: row.notes ?? "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 };
 
@@ -354,6 +399,111 @@ export const setDailyEntriesLock = async (
       updated_at: new Date().toISOString(),
     })
     .eq("work_date", workDate);
+
+  return !error;
+};
+
+export const getEmployeeTimesheetEntries = async (
+  workDate?: string,
+  employeeUsername?: string,
+) => {
+  if (!isSupabaseConfigured) {
+    return [];
+  }
+
+  let query = supabase
+    .from("employee_timesheets")
+    .select("*")
+    .order("work_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (workDate) {
+    query = query.eq("work_date", workDate);
+  }
+
+  if (employeeUsername) {
+    query = query.eq("employee_username", employeeUsername);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) {
+    return [];
+  }
+
+  return (data as EmployeeTimesheetDbRow[]).map(mapDbTimesheetToEntry);
+};
+
+export const saveEmployeeTimesheetEntry = async (
+  entry: EmployeeTimesheetEntry,
+): Promise<EmployeeTimesheetSaveResult> => {
+  if (!isSupabaseConfigured) {
+    return {
+      entry: null,
+      error:
+        "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+    };
+  }
+
+  const payload = {
+    work_date: entry.workDate,
+    employee_username: entry.employeeUsername,
+    task_title: entry.taskTitle,
+    hours_spent: entry.hoursSpent,
+    status: entry.status,
+    notes: entry.notes,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!entry.id) {
+    const { data, error } = await supabase
+      .from("employee_timesheets")
+      .insert(payload)
+      .select("*")
+      .single();
+
+    if (error || !data) {
+      return {
+        entry: null,
+        error: error?.message ?? "Failed to save timesheet entry.",
+      };
+    }
+
+    return {
+      entry: mapDbTimesheetToEntry(data as EmployeeTimesheetDbRow),
+      error: null,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("employee_timesheets")
+    .update(payload)
+    .eq("id", entry.id)
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    return {
+      entry: null,
+      error: error?.message ?? "Failed to update timesheet entry.",
+    };
+  }
+
+  return {
+    entry: mapDbTimesheetToEntry(data as EmployeeTimesheetDbRow),
+    error: null,
+  };
+};
+
+export const deleteEmployeeTimesheetEntry = async (entryId: string) => {
+  if (!isSupabaseConfigured) {
+    return false;
+  }
+
+  const { error } = await supabase
+    .from("employee_timesheets")
+    .delete()
+    .eq("id", entryId);
 
   return !error;
 };
