@@ -5,7 +5,7 @@ export function Footer() {
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-3 gap-8 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Company Info */}
           <div>
             <div className="mb-4">
@@ -34,7 +34,7 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="#home"
+                  href="/"
                   className="text-gray-400 hover:text-cyan-400 transition-colors"
                 >
                   Home
@@ -42,7 +42,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="#about"
+                  href="/#about"
                   className="text-gray-400 hover:text-cyan-400 transition-colors"
                 >
                   About
@@ -50,7 +50,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="#services"
+                  href="/#services"
                   className="text-gray-400 hover:text-cyan-400 transition-colors"
                 >
                   Services
@@ -58,10 +58,57 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="#contact"
+                  href="/#contact"
                   className="text-gray-400 hover:text-cyan-400 transition-colors"
                 >
                   Contact
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Our Services */}
+          <div>
+            <h4 className="text-lg mb-4">Our Services</h4>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href="/digital-marketing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-cyan-400 transition-colors"
+                >
+                  Digital Marketing
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/website-development"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-cyan-400 transition-colors"
+                >
+                  Website Development
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/mobile-app-development"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-cyan-400 transition-colors"
+                >
+                  Mobile App Development
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/end-to-end-digital-solutions"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-cyan-400 transition-colors"
+                >
+                  End to End Solutions
                 </a>
               </li>
             </ul>

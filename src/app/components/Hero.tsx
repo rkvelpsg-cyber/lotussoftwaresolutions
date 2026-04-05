@@ -5,7 +5,7 @@ export function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-purple-50"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-purple-50/35"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
         <div className="max-w-5xl mx-auto text-center">
@@ -31,7 +31,7 @@ export function Hero() {
               <img
                 src="/lotussoftware_logo.jpeg"
                 alt="Lotus Software Solutions"
-                className="w-[400px] h-auto max-w-full"
+                className="w-[400px] h-auto max-w-full mix-blend-multiply contrast-110"
               />
               <motion.div
                 className="absolute inset-0 bg-gradient-to-br from-blue-400 via-cyan-400 to-teal-400 rounded-3xl blur-xl opacity-30"
@@ -85,11 +85,14 @@ export function Hero() {
               Transforming Ideas into Digital Excellence
             </h1>
             <p
-              className="text-xl md:text-2xl text-gray-700 max-w-3xl mx-auto"
+              className="text-xl md:text-2xl text-white max-w-3xl mx-auto"
               style={{ fontFamily: "'Poppins', sans-serif" }}
             >
-              Creating cutting-edge websites and mobile applications for hotels,
-              educational institutions, enterprises, shops, hospitals, and more.
+              Specialising in <strong>Digital Marketing</strong>,{" "}
+              <strong>Website Development</strong>,
+              <strong> Mobile App Development</strong> (Android &amp; iOS), and{" "}
+              <strong>End-to-End Digital Solutions</strong> for businesses of
+              all sizes.
             </p>
           </motion.div>
 
@@ -128,13 +131,13 @@ export function Hero() {
             className="mt-16 pt-8 border-t border-purple-200"
           >
             <p
-              className="text-gray-600 mb-2"
+              className="text-white/90 mb-2"
               style={{ fontFamily: "'Poppins', sans-serif" }}
             >
               Founded & Led by
             </p>
             <p
-              className="text-xl bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent"
+              className="text-xl text-cyan-100 font-semibold"
               style={{ fontFamily: "'Poppins', sans-serif" }}
             >
               Dr. Sivaranjani Selladurai, Ph.D

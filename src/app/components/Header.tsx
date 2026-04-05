@@ -1,15 +1,24 @@
-import { motion } from "motion/react";
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+"use client";
 
-export function Header() {
+import { motion } from "motion/react";
+import { Menu, X, LogIn } from "lucide-react";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+
+interface HeaderProps {
+  onEmployeeLoginClick?: () => void;
+}
+
+export function Header({ onEmployeeLoginClick }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const isHome = pathname === "/";
 
   const menuItems = [
-    { name: "Home", href: "#home" },
-    { name: "About", href: "#about" },
-    { name: "Services", href: "#services" },
-    { name: "Contact", href: "#contact" },
+    { name: "Home", href: isHome ? "#home" : "/" },
+    { name: "About", href: isHome ? "#about" : "/#about" },
+    { name: "Services", href: isHome ? "#services" : "/#services" },
+    { name: "Contact", href: isHome ? "#contact" : "/#contact" },
   ];
 
   return (
@@ -26,11 +35,13 @@ export function Header() {
             transition={{ delay: 0.2 }}
             className="flex items-center gap-3"
           >
-            <img
-              src="/lotussoftware_logo.jpeg"
-              alt="Lotus Software Solutions"
-              className="h-28 w-auto"
-            />
+            <div className="h-20 w-[220px] overflow-hidden">
+              <img
+                src="/lotussoftware_logo.jpeg"
+                alt="Lotus Software Solutions"
+                className="h-full w-full object-contain mix-blend-multiply"
+              />
+            </div>
           </motion.div>
 
           {/* Desktop menu */}
@@ -48,6 +59,18 @@ export function Header() {
                 {item.name}
               </motion.a>
             ))}
+            <motion.button
+              onClick={onEmployeeLoginClick}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex cursor-pointer items-center gap-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 text-white rounded-full font-semibold hover:shadow-lg transition-shadow"
+            >
+              <LogIn size={18} />
+              Employee Login
+            </motion.button>
           </div>
 
           {/* Mobile menu button */}
@@ -77,6 +100,16 @@ export function Header() {
                 {item.name}
               </a>
             ))}
+            <button
+              onClick={() => {
+                onEmployeeLoginClick?.();
+                setIsMenuOpen(false);
+              }}
+              className="w-full mt-4 flex cursor-pointer items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 text-white rounded-lg font-semibold hover:shadow-lg transition-shadow"
+            >
+              <LogIn size={18} />
+              Employee Login
+            </button>
           </motion.div>
         )}
       </nav>

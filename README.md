@@ -24,17 +24,20 @@ A modern, professional website for Lotus Software Solutions - a premier software
 ### Option 1: Deploy via Netlify CLI
 
 1. Install Netlify CLI globally:
+
 ```bash
 npm install -g netlify-cli
 ```
 
 2. Build the project:
+
 ```bash
 npm install
 npm run build
 ```
 
 3. Deploy to Netlify:
+
 ```bash
 netlify deploy --prod
 ```
@@ -52,26 +55,24 @@ netlify deploy --prod
 
 4. **Configure build settings**
    - Build command: `npm run build`
-   - Publish directory: `dist`
+   - Publish directory: auto-managed by the Next.js Netlify plugin
    - (These are already configured in `netlify.toml`)
 
 5. **Click "Deploy site"**
    - Netlify will automatically build and deploy your site
    - You'll get a live URL like `https://your-site-name.netlify.app`
 
-### Option 3: Manual Deploy via Drag & Drop
+### Option 3: Deploy via Netlify CLI
 
-1. Build the project locally:
+1. Build and deploy with Netlify CLI:
+
 ```bash
 npm install
 npm run build
+netlify deploy --build --prod
 ```
 
-2. Go to [Netlify Drop](https://app.netlify.com/drop)
-
-3. Drag and drop the `dist` folder
-
-4. Your site will be live instantly!
+2. Your site will be deployed with Next.js support.
 
 ## Build Locally
 
@@ -81,8 +82,6 @@ npm install
 
 # Build for production
 npm run build
-
-# The built files will be in the 'dist' folder
 ```
 
 ## Technology Stack
@@ -91,7 +90,7 @@ npm run build
 - **TypeScript** - Type safety
 - **Tailwind CSS v4** - Styling
 - **Motion (Framer Motion)** - Animations
-- **Vite** - Build tool
+- **Next.js** - React framework and build/runtime
 - **Lucide React** - Icons
 
 ## Project Structure
@@ -110,7 +109,8 @@ npm run build
 │   │   └── App.tsx         # Main app component
 │   └── styles/             # CSS files
 ├── public/                 # Static assets
-├── dist/                   # Build output (generated)
+├── app/                    # Next.js app router files
+├── .next/                  # Build output (generated)
 ├── netlify.toml           # Netlify configuration
 └── package.json           # Dependencies
 
@@ -119,6 +119,7 @@ npm run build
 ## Contact Information
 
 **Lotus Software Solutions**
+
 - **Founder & CEO:** Dr. Sivaranjani Selladurai, Ph.D
 - **Phone:** +91-6369143910
 - **Email:** lotussoftwareorg.infotech.in

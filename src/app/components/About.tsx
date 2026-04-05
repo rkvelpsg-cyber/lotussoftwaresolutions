@@ -26,7 +26,10 @@ export function About() {
   ];
 
   return (
-    <section id="about" className="py-20 bg-purple-50 relative overflow-hidden">
+    <section
+      id="about"
+      className="py-20 bg-purple-50/35 relative overflow-hidden"
+    >
       <div className="absolute top-20 right-20 w-64 h-64 bg-cyan-200 rounded-full blur-3xl opacity-20" />
       <div className="absolute bottom-20 left-20 w-64 h-64 bg-teal-200 rounded-full blur-3xl opacity-20" />
       <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full blur-3xl opacity-15" />
@@ -41,7 +44,7 @@ export function About() {
           <h2 className="text-4xl md:text-5xl bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent mb-4">
             About Us
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-white max-w-3xl mx-auto">
             Lotus Software Solutions is a premier software development company
             dedicated to transforming your digital vision into reality
           </p>
@@ -53,16 +56,16 @@ export function About() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
           >
-            <h3 className="text-3xl mb-6 text-gray-800">Our Mission</h3>
-            <p className="text-gray-600 mb-4 text-lg leading-relaxed">
+            <h3 className="text-3xl mb-6 text-white">Our Mission</h3>
+            <p className="text-white mb-4 text-lg leading-relaxed">
               We specialize in creating innovative web and mobile applications
               that empower businesses across diverse industries. From hotels to
               healthcare, educational institutions to enterprises, we deliver
               tailored solutions that drive growth and efficiency.
             </p>
-            <p className="text-gray-600 text-lg leading-relaxed">
+            <p className="text-white text-lg leading-relaxed">
               Under the visionary leadership of{" "}
-              <span className="font-semibold text-cyan-600">
+              <span className="font-semibold text-cyan-300">
                 Dr. Sivaranjani Selladurai, Ph.D
               </span>
               , our team combines technical expertise with industry insights to
