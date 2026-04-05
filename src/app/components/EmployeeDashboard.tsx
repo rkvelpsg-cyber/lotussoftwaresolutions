@@ -273,6 +273,7 @@ export function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
       "demoStatus",
       "orderStatus",
       "paymentReceived",
+      "comment",
     ].includes(field);
   };
 
