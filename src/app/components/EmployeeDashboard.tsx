@@ -426,7 +426,17 @@ export function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
     (employee) => employee.assignedWorks ?? [],
   );
   const overallStats = buildWorkStats(allAssignedWorks);
-  const employeeStats = buildWorkStats(currentUserWorks);
+
+  const employeeTaskCount = dailyRows.length;
+  const employeeCompletedCount = dailyRows.filter((row) =>
+    ["completed", "scheduled"].includes(row.demoStatus.toLowerCase()),
+  ).length;
+  const employeeInProgressCount = dailyRows.filter(
+    (row) => row.demoStatus.toLowerCase() === "pending",
+  ).length;
+  const employeeCancelledCount = dailyRows.filter(
+    (row) => row.demoStatus.toLowerCase() === "cancelled",
+  ).length;
 
   const overviewStats = isAdmin
     ? [
@@ -454,22 +464,22 @@ export function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
     : [
         {
           title: "My Tasks",
-          value: `${employeeStats.total}`,
+          value: `${employeeTaskCount}`,
           color: "from-blue-500",
         },
         {
           title: "Completed",
-          value: `${employeeStats.completed}`,
+          value: `${employeeCompletedCount}`,
           color: "from-green-500",
         },
         {
           title: "In Progress",
-          value: `${employeeStats.inProgress}`,
+          value: `${employeeInProgressCount}`,
           color: "from-orange-500",
         },
         {
-          title: "Pending",
-          value: `${employeeStats.notStarted}`,
+          title: "Cancelled",
+          value: `${employeeCancelledCount}`,
           color: "from-purple-500",
         },
       ];
