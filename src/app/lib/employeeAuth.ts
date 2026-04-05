@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase";
 
 export type WorkStatus = "Not Started" | "In Progress" | "Completed";
 export type UserRole = "employee" | "admin";
@@ -126,6 +126,10 @@ export const getUserByCredentials = async (
   username: string,
   password: string,
 ) => {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+
   const normalizedUsername = username.trim();
   const normalizedPassword = password.trim();
 
@@ -148,6 +152,10 @@ export const getUserByCredentials = async (
 };
 
 export const getAllEmployees = async () => {
+  if (!isSupabaseConfigured) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from("employees")
     .select("*")
@@ -164,6 +172,10 @@ export const getDailyWorkEntries = async (
   workDate: string,
   assignedTo?: string,
 ) => {
+  if (!isSupabaseConfigured) {
+    return [];
+  }
+
   let query = supabase
     .from("daily_work_entries")
     .select("*")
@@ -186,6 +198,14 @@ export const getDailyWorkEntries = async (
 export const saveDailyWorkEntry = async (
   entry: DailyWorkEntry,
 ): Promise<DailyWorkSaveResult> => {
+  if (!isSupabaseConfigured) {
+    return {
+      entry: null,
+      error:
+        "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+    };
+  }
+
   const payload = {
     work_date: entry.workDate,
     s_no: entry.sNo,
@@ -304,6 +324,10 @@ export const saveDailyWorkEntry = async (
 };
 
 export const deleteDailyWorkEntry = async (entryId: string) => {
+  if (!isSupabaseConfigured) {
+    return false;
+  }
+
   const { error } = await supabase
     .from("daily_work_entries")
     .delete()
@@ -317,6 +341,10 @@ export const setDailyEntriesLock = async (
   isLocked: boolean,
   lockedBy: string,
 ) => {
+  if (!isSupabaseConfigured) {
+    return false;
+  }
+
   const { error } = await supabase
     .from("daily_work_entries")
     .update({
